@@ -66,28 +66,15 @@
 </head>
 <body>
 <div class="flex-center position-ref full-height">
-
-    @if($antes != $despues)
-        <div class="content">
-            <div class="title m-b-md">
-                Hubo actualización de anexo 69
-            </div>
-            <div>
-                Registros anteriores: {!! $antes !!}
-                Registros ahora: {!! $despues !!}
-            </div>
+    <div class="content">
+        <div class="title m-b-md">
+            {!! @$content !!}
         </div>
-    @else
-        <div class="content">
-            <div class="title m-b-md">
-                No hubo cambios en el listado 69
-            </div>
-            <div>
-                Registros anteriores: {!! $antes !!}
-                Registros ahora: {!! $despues !!}
-            </div>
+        <div>
+            Registros anteriores: {!! $antes !!}
+            Registros ahora: {!! $despues !!}
         </div>
-    @endif
+    </div>
 </div>
 </body>
 </html>

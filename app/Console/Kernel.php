@@ -3,6 +3,7 @@
 namespace App\Console;
 
 use App\Console\Commands\Actualizar69;
+use App\Console\Commands\Actualizar69B;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -15,6 +16,7 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         Actualizar69::class,
+        Actualizar69B::class,
     ];
 
     /**
@@ -27,7 +29,8 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')
         //          ->hourly();
-        $schedule->command(Actualizar69::class)->cron('00 00,06,12,18 * * *');
+        $schedule->command(Actualizar69B::class)->cron('00 00,06,12,18 * * *');
+        $schedule->command(Actualizar69::class)->cron('00 22,04,10,16 * * *');
     }
 
     /**
