@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use PHPExcel_Reader_CSV;
+use PHPExcel_Style_NumberFormat;
+use PHPExcel_Shared_Date;
+use Carbon\Carbon;
 
 class Actualizar69 extends Command
 {
@@ -76,19 +79,26 @@ class Actualizar69 extends Command
             $razon_social = $sheet->getCell("B".$row)->getFormattedValue();
             $tipo_persona = $sheet->getCell("C".$row)->getFormattedValue();
             $supuesto = $sheet->getCell("D".$row)->getFormattedValue();
-            //$fecha_primera_publicacion = $sheet->getCell("E".$row)->getFormattedValue();
             $fecha_primera_publicacion = $sheet->getCell("E".$row)->getValue();
             if(@$fecha_primera_publicacion) {
-                $array_fecha = date_parse_from_format("j/n/Y", $fecha_primera_publicacion);
-                $fecha_primera_publicacion = $array_fecha['year'] . '-' . $array_fecha['month'] . '-' . $array_fecha['day'];
+                if (gettype($fecha_primera_publicacion) == 'double') {
+                    $fecha_primera_publicacion = date('Y-m-d', PHPExcel_Shared_Date::ExcelToPHP($fecha_primera_publicacion + 1));
+                }
+                else {
+                    $fecha_primera_publicacion = Carbon::createFromFormat('d/m/Y', $fecha_primera_publicacion)->format('Y-m-d');
+                }
             }
             $monto = $sheet->getCell("F".$row)->getFormattedValue();
-            //$fecha_publicacion = $sheet->getCell("G".$row)->getFormattedValue();
             $fecha_publicacion = $sheet->getCell("G".$row)->getValue();
             if(@$fecha_publicacion) {
-                $array_fecha = date_parse_from_format("j/n/Y", $fecha_publicacion);
-                $fecha_publicacion = $array_fecha['year'] . '-' . $array_fecha['month'] . '-' . $array_fecha['day'];
+                if (gettype($fecha_publicacion) == 'double') {
+                    $fecha_publicacion = date('Y-m-d', PHPExcel_Shared_Date::ExcelToPHP($fecha_publicacion + 1));
+                }
+                else {
+                    $fecha_publicacion = Carbon::createFromFormat('d/m/Y', $fecha_publicacion)->format('Y-m-d');
+                }
             }
+
             if (strpos($razon_social, "\\") !== false) {
                 $razon_social = str_replace("\\", "\\\\", $razon_social);
             }
