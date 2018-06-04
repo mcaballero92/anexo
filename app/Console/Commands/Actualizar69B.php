@@ -76,14 +76,15 @@ class Actualizar69B extends Command
                     if ($sNodeDetail->getElementsByTagName('a')->length > 0) {
                         if (@$item0) {
                             $Columnas['url_oficio'] = 'http://www.sat.gob.mx'.$item0->getAttribute('href');
-                            $Columnas['oficio'] = $item0->getAttribute('title');
-                            if (strlen($Columnas['oficio']) < 14 || strlen($Columnas['oficio']) == 0) {
+                            $Columnas['oficio'] = $this->extraer_oficio($item0->nodeValue);
+                            //$Columnas['oficio'] = $item0->getAttribute('title');
+                            /*if (strlen($Columnas['oficio']) < 14 || strlen($Columnas['oficio']) == 0) {
                                 $Columnas['oficio'] = $item0->nodeValue;
                             }
                             if ($this->extraer_oficio($Columnas['oficio']) === "500-05-20172605") {
                                 $Columnas['oficio'] = $item0->nodeValue;
                             }
-                            $Columnas['oficio'] = $this->extraer_oficio($Columnas['oficio']);
+                            $Columnas['oficio'] = $this->extraer_oficio($Columnas['oficio']);*/
                         }
                         if (@$item1) {
                             if ($Tabla != 3) {
