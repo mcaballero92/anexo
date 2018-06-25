@@ -52,8 +52,10 @@ class Actualizar69 extends Command
         /*
          * Leer excel descargado del SAT
          */
-        $csv_file = "http://www.sat.gob.mx/cifras_sat/Documents/Listado_Completo_69.csv";
-        $tmp_file = sys_get_temp_dir() . '/' . basename("http://www.sat.gob.mx/cifras_sat/Documents/Listado_Completo_69.csv");
+        //$csv_file = "http://www.sat.gob.mx/cifras_sat/Documents/Listado_Completo_69.csv";
+        //$tmp_file = sys_get_temp_dir() . '/' . basename("http://www.sat.gob.mx/cifras_sat/Documents/Listado_Completo_69.csv");
+        $csv_file = "http://omawww.sat.gob.mx/cifras_sat/Documents/Listado_Completo_69.csv";
+        $tmp_file = sys_get_temp_dir() . '/' . basename("http://omawww.sat.gob.mx/cifras_sat/Documents/Listado_Completo_69.csv");
         if (!file_exists($tmp_file)) {
             shell_exec("wget -O $tmp_file $csv_file");
             if (file_exists($tmp_file)) {

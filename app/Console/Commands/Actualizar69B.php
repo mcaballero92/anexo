@@ -50,13 +50,13 @@ class Actualizar69B extends Command
          * Leer html del SAT
          */
         $texto = "";
-        $url = fopen("http://www.sat.gob.mx/informacion_fiscal/Paginas/notificacion_contribuyentes_operaciones_inexistentes.aspx", "r");
+        $url = fopen("http://omawww.sat.gob.mx/informacion_fiscal/Paginas/notificacion_contribuyentes_operaciones_inexistentes.aspx", "r");
         if ($url) {
             while (! feof($url)) {
                 $texto .= fgets($url, 512);
             }
         }
-        echo "Leyendo url http://www.sat.gob.mx/informacion_fiscal/Paginas/notificacion_contribuyentes_operaciones_inexistentes.aspx" . PHP_EOL;
+        echo "Leyendo url http://omawww.sat.gob.mx/informacion_fiscal/Paginas/notificacion_contribuyentes_operaciones_inexistentes.aspx" . PHP_EOL;
         $DOM = new DOMDocument();
         @$DOM->loadHTML($texto);
         echo "Leyendo página del SAT en buscar de las url de oficio y anexo..." . PHP_EOL;
@@ -125,8 +125,10 @@ class Actualizar69B extends Command
         /*
          * Leer excel descargado del SAT
          */
-        $csv_file = "http://www.sat.gob.mx/cifras_sat/Documents/Listado_Completo_69-B.csv";
-        $tmp_file = sys_get_temp_dir() . '/' . basename("http://www.sat.gob.mx/cifras_sat/Documents/Listado_Completo_69-B.csv");
+        //$csv_file = "http://www.sat.gob.mx/cifras_sat/Documents/Listado_Completo_69-B.csv";
+        //$tmp_file = sys_get_temp_dir() . '/' . basename("http://www.sat.gob.mx/cifras_sat/Documents/Listado_Completo_69-B.csv");
+        $csv_file = "http://omawww.sat.gob.mx/cifras_sat/Documents/Listado_Completo_69-B.csv";
+        $tmp_file = sys_get_temp_dir() . '/' . basename("http://omawww.sat.gob.mx/cifras_sat/Documents/Listado_Completo_69-B.csv");
         if (!file_exists($tmp_file)) {
             shell_exec("wget -O $tmp_file $csv_file");
             if (file_exists($tmp_file)) {
