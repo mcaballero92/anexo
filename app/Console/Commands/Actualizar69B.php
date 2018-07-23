@@ -64,6 +64,7 @@ class Actualizar69B extends Command
         $Presunto = [];
         $Definitivo = [];
         $Desvirtuado = [];
+        $Sentencia = [];
         $Tabla = 1;
         $Columnas = [];
         foreach ($Table as $Node) {
@@ -75,7 +76,7 @@ class Actualizar69B extends Command
                     $item1 = $sNodeDetail->getElementsByTagName('a')->item(1);
                     if ($sNodeDetail->getElementsByTagName('a')->length > 0) {
                         if (@$item0) {
-                            $Columnas['url_oficio'] = 'http://www.sat.gob.mx'.$item0->getAttribute('href');
+                            $Columnas['url_oficio'] = 'http://omawww.sat.gob.mx'.$item0->getAttribute('href');
                             $Columnas['oficio'] = $this->extraer_oficio($item0->nodeValue);
                             //$Columnas['oficio'] = $item0->getAttribute('title');
                             /*if (strlen($Columnas['oficio']) < 14 || strlen($Columnas['oficio']) == 0) {
@@ -88,7 +89,7 @@ class Actualizar69B extends Command
                         }
                         if (@$item1) {
                             if ($Tabla != 3) {
-                                $Columnas['url_anexo'] = 'http://www.sat.gob.mx'.$item1->getAttribute('href');
+                                $Columnas['url_anexo'] = 'http://omawww.sat.gob.mx'.$item1->getAttribute('href');
                                 $Columnas['anexo'] = $item1->getAttribute('title');
                                 if (strlen($Columnas['anexo']) == 7 || strlen($Columnas['anexo']) == 0) {
                                     $Columnas['anexo'] = $item1->nodeValue;
@@ -122,6 +123,34 @@ class Actualizar69B extends Command
                 $Tabla++;
             }
         }
+
+        $Columnas = [];
+        foreach ($Table as $Node) {
+            if ($Node->getElementsByTagName('th')->length > 0) {
+                $Detail = $Node->getElementsByTagName('th');
+                foreach ($Detail as $sNodeDetail) {
+                    $item0 = $sNodeDetail->getElementsByTagName('a')->item(0);
+                    $item1 = $sNodeDetail->getElementsByTagName('a')->item(1);
+                    if ($sNodeDetail->getElementsByTagName('a')->length > 0) {
+                        if (@$item0) {
+                            $Columnas['url_oficio'] = 'http://omawww.sat.gob.mx'.$item0->getAttribute('href');
+                            $Columnas['oficio'] = $this->extraer_oficio($item0->nodeValue);
+                        }
+                        if (@$item1) {
+                            $Columnas['url_anexo'] = 'http://omawww.sat.gob.mx' . $item1->getAttribute('href');
+                            $Columnas['anexo'] = $item1->getAttribute('title');
+                            if (strlen($Columnas['anexo']) == 7 || strlen($Columnas['anexo']) == 0) {
+                                $Columnas['anexo'] = $item1->nodeValue;
+                            }
+                        }
+                    }
+                    if (count($Columnas) > 0) {
+                        array_push($Sentencia, $Columnas);
+                    }
+                }
+            }
+        }
+
         /*
          * Leer excel descargado del SAT
          */
@@ -172,6 +201,9 @@ class Actualizar69B extends Command
                 }
                 if ($sheet->getCell("J".$row)->getValue() != "") {
                     DB::statement(" INSERT INTO `69` (rfc, contribuyente, tipo) VALUES ('".$rfc."','".$contribuyente."','Desvirtuado')");
+                }
+                if ($sheet->getCell("P" . $row)->getValue() != "") {
+                    DB::statement(" INSERT INTO `69` (rfc, contribuyente, tipo) VALUES ('".$rfc."','".$contribuyente."','Sentencia favorable')");
                 }
 
                 /*Leer Presuntos*/
@@ -258,6 +290,34 @@ class Actualizar69B extends Command
                 }
                 $data['oficio'] = $oficio_excel;
                 DB::statement("UPDATE `69` SET oficio='".$oficio_excel."'$columnas_datos WHERE rfc='".$rfc."' AND tipo='Desvirtuado'");
+
+                /*Leer Sentencia favorable*/
+                $oficio_excel = $sheet->getCell("O".$row)->getValue();
+                $fecha_sat = $sheet->getCell("P".$row)->getValue();
+                $fecha_dof = $sheet->getCell("R".$row)->getValue();
+                $data = [];
+                $columnas_datos = "";
+                if (@$fecha_sat) {
+                    $array_fecha = date_parse_from_format("j/n/Y", $fecha_sat);
+                    $fecha_sat = $array_fecha['year'].'-'.$array_fecha['month'].'-'.$array_fecha['day'];
+                    $columnas_datos = $columnas_datos.", fecha_sat='".$fecha_sat."'";
+                    $data['fecha_sat'] = $fecha_sat;
+                }
+                if (@$fecha_dof) {
+                    $array_fecha = date_parse_from_format("j/n/Y", $fecha_dof);
+                    $fecha_dof = $array_fecha['year'].'-'.$array_fecha['month'].'-'.$array_fecha['day'];
+                    $columnas_datos = $columnas_datos.", fecha_dof='".$fecha_dof."'";
+                    $data['fecha_dof'] = $fecha_dof;
+                }
+                if (preg_match("/^([0-9]+)-([0-9]+)-([0-9]+)-([0-9]+)-([0-9]+) /", $oficio_excel, $matches)) {
+                    $oficio_excel = $matches[0];
+                } else {
+                    if (preg_match("/^([0-9]+)-([0-9]+)-([0-9]+)-([0-9]+) /", $oficio_excel, $matches)) {
+                        $oficio_excel = $matches[0];
+                    }
+                }
+                $data['oficio'] = $oficio_excel;
+                DB::statement("UPDATE `69` SET oficio='".$oficio_excel."'$columnas_datos WHERE rfc='".$rfc."' AND tipo='Sentencia favorable'");
             }
             $this->progressBar($row, $highestRow);
         }
@@ -326,6 +386,19 @@ class Actualizar69B extends Command
                 /*Desvirtuados*/
                 if ($row["tipo"] == "Desvirtuado") {
                     foreach ($Desvirtuado as $row_2) {
+                        $oficio = trim($row_2['oficio']);
+                        $pos = strpos($row["oficio"], $oficio);
+                        if ($pos !== false) {
+                            $url_oficio = $row_2['url_oficio'];
+                            DB::statement("UPDATE `69` SET oficio='".$oficio."',url_oficio='".$url_oficio."' WHERE rfc='".$row["rfc"]."' AND tipo='".$row["tipo"]."'");
+                            break;
+                        }
+                    }
+                }
+
+                /*Sentencia favorable*/
+                if ($row["tipo"] == "Sentencia favorable") {
+                    foreach ($Sentencia as $row_2) {
                         $oficio = trim($row_2['oficio']);
                         $pos = strpos($row["oficio"], $oficio);
                         if ($pos !== false) {
