@@ -334,11 +334,11 @@ class Actualizar69B extends Command
                     'subject' => 'Sin actualización de 69B'
                 );
 
-                /*Mail::send('layouts.anexo', ['antes' => $Clone, 'despues' => $Nuevo, 'content' => 'No hubo cambios en el listado 69B'], function ($message) use ($email_data) {
+                Mail::send('layouts.anexo', ['antes' => $Clone, 'despues' => $Nuevo, 'content' => 'No hubo cambios en el listado 69B'], function ($message) use ($email_data) {
                     $message->from('cmiguel@advans.mx', 'Laravel')
                         ->to($email_data['recipient'])
                         ->subject($email_data['subject']);
-                });*/
+                });
                 unlink($tmp_file);
                 exit();
             }else{

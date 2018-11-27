@@ -30,7 +30,7 @@ class Kernel extends ConsoleKernel
         // $schedule->command('inspire')
         //          ->hourly();
         $schedule->command(Actualizar69B::class)->cron('00 00,06,12,18 * * *');
-        $schedule->command(Actualizar69::class)->cron('00 22,04,10,16 * * *');
+        $schedule->command(Actualizar69::class)->cron('00 04,22 * * *');
     }
 
     /**

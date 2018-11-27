@@ -126,11 +126,11 @@ class Actualizar69 extends Command
                     'subject' => 'Sin actualización de 69'
                 );
 
-                /*Mail::send('layouts.anexo', ['antes' => $Clone, 'despues' => $Nuevo ,'content' => 'No hubo cambios en el listado 69'], function ($message) use ($email_data) {
+                Mail::send('layouts.anexo', ['antes' => $Clone, 'despues' => $Nuevo ,'content' => 'No hubo cambios en el listado 69'], function ($message) use ($email_data) {
                     $message->from('cmiguel@advans.mx', 'Laravel')
                         ->to($email_data['recipient'])
                         ->subject($email_data['subject']);
-                });*/
+                });
                 unlink($tmp_file);
                 exit();
             }else{
