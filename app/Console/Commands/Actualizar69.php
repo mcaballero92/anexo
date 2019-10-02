@@ -52,66 +52,93 @@ class Actualizar69 extends Command
         /*
          * Leer excel descargado del SAT
          */
-        //$csv_file = "http://www.sat.gob.mx/cifras_sat/Documents/Listado_Completo_69.csv";
-        //$tmp_file = sys_get_temp_dir() . '/' . basename("http://www.sat.gob.mx/cifras_sat/Documents/Listado_Completo_69.csv");
-        $csv_file = "http://omawww.sat.gob.mx/cifras_sat/Documents/Listado_Completo_69.csv";
-        $tmp_file = sys_get_temp_dir() . '/' . basename("http://omawww.sat.gob.mx/cifras_sat/Documents/Listado_Completo_69.csv");
-        if (!file_exists($tmp_file)) {
-            shell_exec("wget -O $tmp_file $csv_file");
-            if (file_exists($tmp_file)) {
-                echo "Archivo descargado" . PHP_EOL;
-            } else {
-                throw new Exception("Ocurrio un error al descargar el archivo");
-            }
-        }
-
-        echo "Cargando archivo " . basename($tmp_file) . "..." . PHP_EOL;
-        $archivo = $tmp_file;
-        $objReader = new PHPExcel_Reader_CSV;
-        $objReader->setInputEncoding('windows-1252');
-        $objPHPExcel = $objReader->load($archivo);
-
-        $sheet = $objPHPExcel->getSheet(0);
-        $highestRow = $sheet->getHighestRow();
-
-        /*Leer listado de la 69*/
-        echo "Registrar datos del archivo de excel a la BD..." . PHP_EOL;
-        for ($row = 2; $row <= $highestRow; $row++) {
-            $rfc = $sheet->getCell("A".$row)->getFormattedValue();
-            $razon_social = $sheet->getCell("B".$row)->getFormattedValue();
-            $tipo_persona = $sheet->getCell("C".$row)->getFormattedValue();
-            $supuesto = $sheet->getCell("D".$row)->getFormattedValue();
-            $fecha_primera_publicacion = $sheet->getCell("E".$row)->getValue();
-            if(@$fecha_primera_publicacion) {
-                if (gettype($fecha_primera_publicacion) == 'double') {
-                    $fecha_primera_publicacion = date('Y-m-d', PHPExcel_Shared_Date::ExcelToPHP($fecha_primera_publicacion + 1));
-                }
-                else {
-                    $fecha_primera_publicacion = Carbon::createFromFormat('d/m/Y', $fecha_primera_publicacion)->format('Y-m-d');
-                }
-            }
-            $monto = $sheet->getCell("F".$row)->getFormattedValue();
-            $fecha_publicacion = $sheet->getCell("G".$row)->getValue();
-            if(@$fecha_publicacion) {
-                if (gettype($fecha_publicacion) == 'double') {
-                    $fecha_publicacion = date('Y-m-d', PHPExcel_Shared_Date::ExcelToPHP($fecha_publicacion + 1));
-                }
-                else {
-                    $fecha_publicacion = Carbon::createFromFormat('d/m/Y', $fecha_publicacion)->format('Y-m-d');
+        foreach ([
+                     'Cancelados',
+                     'Condonadosart74CFF',
+                     'Condonadosart146BCFF',
+                     'Condonadosart21CFF',
+                     'CondonadosporDecreto',
+                     'Retornoinversiones',
+                     'Exigibles',
+                     'Firmes',
+                     'No%20localizados',
+                     'Sentencias',
+                     'Eliminados',
+                 ] as $archivo) {
+            $csv_file = "http://omawww.sat.gob.mx/cifras_sat/Documents/$archivo.csv";
+            $tmp_file = sys_get_temp_dir() . '/' . basename("http://omawww.sat.gob.mx/cifras_sat/Documents/$archivo.csv");
+            if (!file_exists($tmp_file)) {
+                shell_exec("wget -O $tmp_file $csv_file");
+                if (file_exists($tmp_file)) {
+                    echo "Archivo descargado" . PHP_EOL;
+                } else {
+                    throw new Exception("Ocurrio un error al descargar el archivo");
                 }
             }
 
-            if (strpos($razon_social, "\\") !== false) {
-                $razon_social = str_replace("\\", "\\\\", $razon_social);
-            }
-            if (strpos($razon_social, "'") !== false) {
-                $razon_social = str_replace("'", "\'", $razon_social);
-            }
+            echo "Cargando archivo " . basename($tmp_file) . "..." . PHP_EOL;
+            $archivo = $tmp_file;
+            $objReader = new PHPExcel_Reader_CSV;
+            $objReader->setInputEncoding('windows-1252');
+            $objPHPExcel = $objReader->load($archivo);
 
-            if ($rfc != "XXXXXXXXXXXX") {
-                DB::statement(" INSERT INTO `69a` (rfc, razon_social, tipo_persona, supuesto" . (@$fecha_primera_publicacion ? ',fecha_primera_publicacion' : '') .(@$monto ? ',monto' : ''). (@$fecha_publicacion ? ",fecha_publicacion" : "") . " ) VALUES ('$rfc','$razon_social','$tipo_persona','$supuesto'" . (@$fecha_primera_publicacion ? ",'$fecha_primera_publicacion'" : "") . (@$monto ? ",'$monto'" : ""). (@$fecha_publicacion ? ",'$fecha_publicacion'" : "") . ")");
+            $sheet = $objPHPExcel->getSheet(0);
+            $highestRow = $sheet->getHighestRow();
+
+            /*Leer listado de la 69*/
+            echo "Registrar datos del archivo de excel a la BD..." . PHP_EOL;
+            for ($row = 2; $row <= $highestRow; $row++) {
+
+                if($this->validarArchivo($archivo) == 7) {
+                    $rfc = $sheet->getCell("A" . $row)->getFormattedValue();
+                    $razon_social = $sheet->getCell("B" . $row)->getFormattedValue();
+                    $tipo_persona = $sheet->getCell("C" . $row)->getFormattedValue();
+                    $supuesto = $sheet->getCell("D" . $row)->getFormattedValue();
+                    $fecha_primera_publicacion = $sheet->getCell("E" . $row)->getValue();
+
+                    $monto = $sheet->getCell("F" . $row)->getFormattedValue();
+                    $fecha_publicacion = $sheet->getCell("G" . $row)->getValue();
+                    if (@$fecha_publicacion) {
+                        if (gettype($fecha_publicacion) == 'double') {
+                            $fecha_publicacion = date('Y-m-d', PHPExcel_Shared_Date::ExcelToPHP($fecha_publicacion + 1));
+                        } else {
+                            $fecha_publicacion = Carbon::createFromFormat('d/m/Y', $fecha_publicacion)->format('Y-m-d');
+                        }
+                    }
+
+                } else {
+                    $rfc = $sheet->getCell("A" . $row)->getFormattedValue();
+                    $razon_social = $sheet->getCell("B" . $row)->getFormattedValue();
+                    $tipo_persona = $sheet->getCell("C" . $row)->getFormattedValue();
+                    $supuesto = $sheet->getCell("D" . $row)->getFormattedValue();
+                    $fecha_primera_publicacion = $sheet->getCell("E" . $row)->getValue();
+                }
+
+                if (@$fecha_primera_publicacion) {
+                    if (gettype($fecha_primera_publicacion) == 'double') {
+                        $fecha_primera_publicacion = date('Y-m-d', PHPExcel_Shared_Date::ExcelToPHP($fecha_primera_publicacion + 1));
+                    } else {
+                        $fecha_primera_publicacion = Carbon::createFromFormat('d/m/Y', $fecha_primera_publicacion)->format('Y-m-d');
+                    }
+                }
+
+                if (strpos($razon_social, "\\") !== false) {
+                    $razon_social = str_replace("\\", "\\\\", $razon_social);
+                }
+                if (strpos($razon_social, "'") !== false) {
+                    $razon_social = str_replace("'", "\'", $razon_social);
+                }
+
+                if ($rfc != "XXXXXXXXXXXX") {
+                    if($this->validarArchivo($archivo) == 7) {
+                        DB::statement(" INSERT INTO `69a` (rfc, razon_social, tipo_persona, supuesto" . (@$fecha_primera_publicacion ? ',fecha_primera_publicacion' : '') . (@$monto ? ',monto' : '') . (@$fecha_publicacion ? ",fecha_publicacion" : "") . " ) VALUES ('$rfc','$razon_social','$tipo_persona','$supuesto'" . (@$fecha_primera_publicacion ? ",'$fecha_primera_publicacion'" : "") . (@$monto ? ",'$monto'" : "") . (@$fecha_publicacion ? ",'$fecha_publicacion'" : "") . ")");
+                    } else {
+                        DB::statement(" INSERT INTO `69a` (rfc, razon_social, tipo_persona, supuesto" . (@$fecha_primera_publicacion ? ',fecha_primera_publicacion' : '').") VALUES ('$rfc','$razon_social','$tipo_persona','$supuesto'" . (@$fecha_primera_publicacion ? ",'$fecha_primera_publicacion'" : "") . ")");
+                    }
+                }
+                $this->progressBar($row, $highestRow);
             }
-            $this->progressBar($row, $highestRow);
+            echo PHP_EOL;
         }
 
         $Nuevo = 0;
@@ -131,17 +158,26 @@ class Actualizar69 extends Command
                         ->to($email_data['recipient'])
                         ->subject($email_data['subject']);
                 });
+
+                if(DB::table('anexos_updates')->where('tipo', '69a')->exists()) {
+                    DB::statement("UPDATE `anexos_updates` SET fecha=NOW() WHERE tipo='69a'");
+                } else {
+                    DB::statement("INSERT INTO `anexos_updates` VALUES ('69a', NOW())");
+                }
+
                 unlink($tmp_file);
                 exit();
             }else{
                 echo PHP_EOL . "Registros anteriores: " . $Clone . PHP_EOL;
                 echo "Registros nuevos: " . $Nuevo . PHP_EOL;
-                DB::statement("DROP TABLE `69a_Clone`");
+                DB::statement("TRUNCATE TABLE `69a_Clone`");
+//                DB::statement("DROP TABLE `69a_Clone`");
             }
         }
 
         echo PHP_EOL . "Registrar tabla para comparar" . PHP_EOL;
-        DB::statement("CREATE TABLE `69a_Clone` AS SELECT * FROM `69a`");
+        DB::statement("INSERT INTO `69a_Clone` SELECT * FROM `69a`");
+//        DB::statement("CREATE TABLE `69a_Clone` AS SELECT * FROM `69a`");
 
         echo  PHP_EOL . "Proceso terminado..." . PHP_EOL;
         $email_data = array(
@@ -195,5 +231,46 @@ class Actualizar69 extends Command
         $left = 100 - $perc;
         $write = sprintf("\033[0G\033[2K[%'={$perc}s>%-{$left}s] - $perc%% - $done/$total", "", "");
         fwrite(STDERR, $write);
+    }
+
+    public function validarArchivo($archivo) {
+        $column_numbers = 7;
+        switch ($archivo) {
+            case 'Cancelados':
+                $column_numbers = 7;
+                break;
+            case 'Condonadosart74CFF':
+                $column_numbers = 7;
+                break;
+            case 'Condonadosart146BCFF':
+                $column_numbers = 7;
+                break;
+            case 'Condonadosart21CFF':
+                $column_numbers = 7;
+                break;
+            case 'CondonadosporDecreto':
+                $column_numbers = 7;
+                break;
+            case 'Retornoinversiones':
+                $column_numbers = 7;
+                break;
+
+            case 'Exigibles':
+                $column_numbers = 5;
+                break;
+            case 'Firmes':
+                $column_numbers = 5;
+                break;
+            case 'No':
+                $column_numbers = 5;
+                break;
+            case 'Sentencias':
+                $column_numbers = 5;
+                break;
+            case 'Eliminados':
+                $column_numbers = 6;
+                break;
+        }
+        return $column_numbers;
     }
 }

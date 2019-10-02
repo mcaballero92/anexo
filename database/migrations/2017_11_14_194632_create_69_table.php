@@ -16,7 +16,7 @@ class Create69Table extends Migration
         Schema::create('69', function (Blueprint $table) {
             //$table->increments('id');
             $table->string('rfc', 13)->index();
-            $table->text('contribuyente')->default('');
+            $table->text('contribuyente');//->default('');
             $table->string('tipo')->default('');
             $table->string('oficio')->default('');
             $table->dateTime('fecha_sat')->nullable(true);

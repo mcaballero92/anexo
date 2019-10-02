@@ -50,13 +50,13 @@ class Actualizar69B extends Command
          * Leer html del SAT
          */
         $texto = "";
-        $url = fopen("http://omawww.sat.gob.mx/informacion_fiscal/Paginas/notificacion_contribuyentes_operaciones_inexistentes.aspx", "r");
+        $url = fopen("https://www.gob.mx/sat/acciones-y-programas/notificacion-a-contribuyentes-con-operaciones-presuntamente-inexistentes-y-listados-definitivos-131644", "r");
         if ($url) {
             while (! feof($url)) {
                 $texto .= fgets($url, 512);
             }
         }
-        echo "Leyendo url http://omawww.sat.gob.mx/informacion_fiscal/Paginas/notificacion_contribuyentes_operaciones_inexistentes.aspx" . PHP_EOL;
+        echo "Leyendo url https://www.gob.mx/sat/acciones-y-programas/notificacion-a-contribuyentes-con-operaciones-presuntamente-inexistentes-y-listados-definitivos-131644" . PHP_EOL;
         $DOM = new DOMDocument();
         @$DOM->loadHTML($texto);
         echo "Leyendo página del SAT en buscar de las url de oficio y anexo..." . PHP_EOL;
@@ -76,7 +76,7 @@ class Actualizar69B extends Command
                     $item1 = $sNodeDetail->getElementsByTagName('a')->item(1);
                     if ($sNodeDetail->getElementsByTagName('a')->length > 0) {
                         if (@$item0) {
-                            $Columnas['url_oficio'] = 'http://omawww.sat.gob.mx'.$item0->getAttribute('href');
+                            $Columnas['url_oficio'] = $item0->getAttribute('href');
                             $Columnas['oficio'] = $this->extraer_oficio($item0->nodeValue);
                             //$Columnas['oficio'] = $item0->getAttribute('title');
                             /*if (strlen($Columnas['oficio']) < 14 || strlen($Columnas['oficio']) == 0) {
@@ -89,7 +89,7 @@ class Actualizar69B extends Command
                         }
                         if (@$item1) {
                             if ($Tabla != 3) {
-                                $Columnas['url_anexo'] = 'http://omawww.sat.gob.mx'.$item1->getAttribute('href');
+                                $Columnas['url_anexo'] = $item1->getAttribute('href');
                                 $Columnas['anexo'] = $item1->getAttribute('title');
                                 if (strlen($Columnas['anexo']) == 7 || strlen($Columnas['anexo']) == 0) {
                                     $Columnas['anexo'] = $item1->nodeValue;
@@ -114,6 +114,11 @@ class Actualizar69B extends Command
                     } elseif ($j == 1 && $Tabla == 3) {
                         if (count($Columnas) > 0) {
                             array_push($Desvirtuado, $Columnas);
+                        }
+                        $j = 0;
+                    } elseif ($j == 1 && $Tabla == 4) {
+                        if (count($Columnas) > 0) {
+                            array_push($Sentencia, $Columnas);
                         }
                         $j = 0;
                     } else {
@@ -265,19 +270,34 @@ class Actualizar69B extends Command
 
                 /*Leer desvirtuados*/
                 $oficio_excel = $sheet->getCell("J".$row)->getValue();
+                $tipo_fecha_sat = $sheet->getCell("I".$row)->getDataType();
+                $tipo_fecha_dof = $sheet->getCell("K".$row)->getDataType();
                 $fecha_sat = $sheet->getCell("I".$row)->getValue();
                 $fecha_dof = $sheet->getCell("K".$row)->getValue();
+
                 $data = [];
                 $columnas_datos = "";
-                if (@$fecha_sat) {
+                if (@$fecha_sat && $tipo_fecha_sat != 'n') {
                     $array_fecha = date_parse_from_format("j/n/Y", $fecha_sat);
                     $fecha_sat = $array_fecha['year'].'-'.$array_fecha['month'].'-'.$array_fecha['day'];
                     $columnas_datos = $columnas_datos.", fecha_sat='".$fecha_sat."'";
                     $data['fecha_sat'] = $fecha_sat;
+                } elseif (@$fecha_sat && $tipo_fecha_sat == 'n') {
+                    $fecha_sat = $sheet->getCell("I".$row)->getFormattedValue();
+                    $fecha_sat = date('Y-m-d', \PHPExcel_Shared_Date::ExcelToPHP($fecha_sat + 1));
+                    $columnas_datos = $columnas_datos.", fecha_sat='".$fecha_sat."'";
+                    $data['fecha_sat'] = $fecha_sat;
+                    \Log::info($columnas_datos);
+                    \Log::info('3'.$tipo_fecha_sat);
                 }
-                if (@$fecha_dof) {
+                if (@$fecha_dof && $tipo_fecha_dof != 'n') {
                     $array_fecha = date_parse_from_format("j/n/Y", $fecha_dof);
                     $fecha_dof = $array_fecha['year'].'-'.$array_fecha['month'].'-'.$array_fecha['day'];
+                    $columnas_datos = $columnas_datos.", fecha_dof='".$fecha_dof."'";
+                    $data['fecha_dof'] = $fecha_dof;
+                } elseif (@$fecha_dof && $tipo_fecha_dof == 'n') {
+                    $fecha_dof = $sheet->getCell("K".$row)->getFormattedValue();
+                    $fecha_dof = date('Y-m-d', \PHPExcel_Shared_Date::ExcelToPHP($fecha_dof + 1));
                     $columnas_datos = $columnas_datos.", fecha_dof='".$fecha_dof."'";
                     $data['fecha_dof'] = $fecha_dof;
                 }
@@ -339,12 +359,20 @@ class Actualizar69B extends Command
                         ->to($email_data['recipient'])
                         ->subject($email_data['subject']);
                 });
+
+                if(DB::table('anexos_updates')->where('tipo', '69')->exists()) {
+                    DB::statement("UPDATE `anexos_updates` SET fecha=NOW() WHERE tipo='69'");
+                } else {
+                    DB::statement("INSERT INTO `anexos_updates` VALUES ('69', NOW())");
+                }
+
                 unlink($tmp_file);
                 exit();
             }else{
                 echo PHP_EOL . "Registros anteriores: " . $Clone . PHP_EOL;
                 echo "Registros nuevos: " . $Nuevo . PHP_EOL;
-                DB::statement("DROP TABLE `69_Clone`");
+                DB::statement("TRUNCATE TABLE `69_Clone`");
+                //DB::statement("DROP TABLE `69_Clone`");
             }
         }
 
@@ -411,7 +439,8 @@ class Actualizar69B extends Command
                 $this->progressBar($index, ($total - 1));
             }
             echo PHP_EOL . "Registrar tabla para comparar" . PHP_EOL;
-            DB::statement("CREATE TABLE `69_Clone` AS SELECT * FROM `69`");
+            DB::statement("INSERT INTO `69_Clone` SELECT * FROM `69`");
+            //DB::statement("CREATE TABLE `69_Clone` AS SELECT * FROM `69`");
         }else{
             echo PHP_EOL . "Sin resultados en la BD..." . PHP_EOL;
         }
